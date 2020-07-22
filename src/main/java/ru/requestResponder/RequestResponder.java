@@ -1,21 +1,19 @@
-package ru.requestResponder.GUI;
+package ru.requestResponder;
 
 import org.apache.log4j.Logger;
 import ru.library.hardware.Network.Serial.Driver.Queue;
 import ru.library.utils.TimeServices;
-import ru.requestResponder.Connector;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.dom4j.Document;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
+import ru.requestResponder.GUI.ApplicationUI;
 
 /**
  * Created by valera2 on 22.07.20.
@@ -25,23 +23,38 @@ public class RequestResponder {
     Connector connector = new Connector();
     Queue receivedUueue = connector.getReceivedQueue();
     private final int RECEIVING_TIMEOUT = 100;
-    private JPanel mainPanel = new JPanel();
-    Map<String, String> responds = new HashMap<String, String>(32);
+    LinkedHashMap<String, String> settings = new LinkedHashMap<String, String>(32);
     String path = "settings.xml";
+    ApplicationUI settingsTable;
+    private CommandProcessor commandProcessor;
 
     public RequestResponder()
     {
-        //responds.put(":0104000A0006EB\r\n", ":01040C00AB00FF000000000000000045\r\n");
-        //responds.put(":0204000A0006EA\r\n", ":02040C00AB00FF000000000000000044\r\n");
-        //responds.put(":0A04000A0006E2\r\n", ":0A040C00AB00FF00000000000000003C\r\n");
-        //responds.put(":0B04000A0006E1\r\n", ":0B040C00AB00FF00000000000000003B\r\n");
-        //responds.put(":0C04000A0006E0\r\n", ":0C040C00AB00FF00000000000000003A\r\n");
-        responds = parseSettings();
-        startRequestResponder();
+        //settings.put(":0104000A0006EB\r\n", ":01040C00AB00FF000000000000000045\r\n");
+        //settings.put(":0204000A0006EA\r\n", ":02040C00AB00FF000000000000000044\r\n");
+        //settings.put(":0A04000A0006E2\r\n", ":0A040C00AB00FF00000000000000003C\r\n");
+        //settings.put(":0B04000A0006E1\r\n", ":0B040C00AB00FF00000000000000003B\r\n");
+        //settings.put(":0C04000A0006E0\r\n", ":0C040C00AB00FF00000000000000003A\r\n");
+        settings = parseSettings();
+        settings.put("port",
+                Connector.TCP_CLIENT_STRING +
+                        Connector.TCP_SPLIT_STRING + "192.168.1.11" +
+                        Connector.TCP_SPLIT_STRING + "5000"
+        );
+        settingsTable = new ApplicationUI(settings, this);
+        //startRequestResponder();
 
     }
 
-    private void startRequestResponder()
+    public void stop()
+    {
+        if (commandProcessor != null)
+        {
+            commandProcessor.stopThread();
+        }
+    }
+
+    public void startRequestResponder()
     {
         connector.openPort(
                 Connector.TCP_CLIENT_STRING +
@@ -49,13 +62,13 @@ public class RequestResponder {
                         Connector.TCP_SPLIT_STRING + "5000"
         );
 
-        commandProcessor commandProcessor = new commandProcessor();
+        commandProcessor = new CommandProcessor();
     }
 
-    private class commandProcessor extends Thread {
+    private class CommandProcessor extends Thread {
         private boolean isWorking = false;
 
-        public commandProcessor()
+        public CommandProcessor()
         {
             isWorking = true;
             start();
@@ -67,12 +80,19 @@ public class RequestResponder {
 
         public void stopThread() {
             this.isWorking = false;
+            connector.closePort(connector.getPortName());
         }
 
         @Override
         public void run() {
             boolean added = false;
             String command = "";
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+            if (isWorking && connector.isOpened())
+            {
+                String date = "[" + sdf.format(System.currentTimeMillis()) + "]: ";
+                settingsTable.print(date + "Connected!");
+            }
             while (isWorking && connector.isOpened())
             {
                 if (receivedUueue != null)
@@ -86,13 +106,19 @@ public class RequestResponder {
                     }
                     if (added)
                     {
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
-                        String date = sdf.format(System.currentTimeMillis());
+                        String date = "[" + sdf.format(System.currentTimeMillis()) + "]: ";
                         System.out.println(date);
                         System.out.println("Command: " + command.replaceAll("\r\n", ""));
                         added = false;
-                        String respond = responds.get(command);
-                        if (respond == null) System.out.println("Unknown request: " + command);
+                        String respond = settings.get(command);
+                        if (respond == null)
+                        {
+                            if (settingsTable != null)
+                            {
+                                settingsTable.print(date + " Unknown request: " + command);
+                            }
+                            System.out.println("Unknown request: " + command);
+                        }
                         else
                         {
                             System.out.println("Respond: " + respond);
@@ -107,13 +133,18 @@ public class RequestResponder {
             }
 
             System.out.println("CommandProcessor finished!");
+            if (settingsTable != null)
+            {
+                String date = "[" + sdf.format(System.currentTimeMillis()) + "]: ";
+                settingsTable.print(date + "Disconnected!");
+            }
         }
     }
 
 
-    private HashMap<String, String> parseSettings()
+    private LinkedHashMap<String, String> parseSettings()
     {
-        HashMap<String, String> responds = new HashMap<String, String>(32);
+        LinkedHashMap<String, String> responds = new LinkedHashMap<String, String>(32);
         try {
             File inputFile = new File(this.path);
             if (!inputFile.exists())

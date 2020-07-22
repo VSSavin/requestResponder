@@ -2,7 +2,6 @@ package ru.requestResponder;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
-import ru.requestResponder.GUI.RequestResponder;
 
 import javax.swing.*;
 
