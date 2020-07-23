@@ -4,29 +4,25 @@ import org.apache.log4j.Logger;
 import ru.library.hardware.Network.Serial.Driver.Queue;
 import ru.library.utils.TimeServices;
 
-import java.io.File;
-import java.io.FileWriter;
+import javax.swing.*;
 import java.text.SimpleDateFormat;
 import java.util.LinkedHashMap;
-import java.util.List;
-
-import org.dom4j.Document;
-import org.dom4j.Node;
-import org.dom4j.io.SAXReader;
-import ru.requestResponder.GUI.ApplicationUI;
 
 /**
  * Created by valera2 on 22.07.20.
  */
 public class RequestResponder {
     public static final Logger LOG = Logger.getLogger(RequestResponder.class);
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
     Connector connector = new Connector();
     Queue receivedUueue = connector.getReceivedQueue();
-    private final int RECEIVING_TIMEOUT = 100;
-    LinkedHashMap<String, String> settings = new LinkedHashMap<String, String>(32);
-    String path = "settings.xml";
-    ApplicationUI settingsTable;
+    private int receivingTimeout = 100;
+    private LinkedHashMap<String, String> settings = new LinkedHashMap<String, String>(32);
     private CommandProcessor commandProcessor;
+    private Object printArea;
+    private boolean isWorking = false;
+    private boolean isReady = false;
+    private String port = "";
 
     public RequestResponder()
     {
@@ -35,6 +31,7 @@ public class RequestResponder {
         //settings.put(":0A04000A0006E2\r\n", ":0A040C00AB00FF00000000000000003C\r\n");
         //settings.put(":0B04000A0006E1\r\n", ":0B040C00AB00FF00000000000000003B\r\n");
         //settings.put(":0C04000A0006E0\r\n", ":0C040C00AB00FF00000000000000003A\r\n");
+        /*
         settings = parseSettings();
         settings.put("port",
                 Connector.TCP_CLIENT_STRING +
@@ -42,8 +39,40 @@ public class RequestResponder {
                         Connector.TCP_SPLIT_STRING + "5000"
         );
         settingsTable = new ApplicationUI(settings, this);
+        */
         //startRequestResponder();
 
+    }
+
+    public void setReceivingTimeout(int receivingTimeout)
+    {
+        this.receivingTimeout = receivingTimeout;
+    }
+
+    public void setPort(String port) {this.port = port;}
+
+    public boolean isReady() {return isReady;}
+
+    private void setReady(boolean isReady)
+    {
+        this.isReady = isReady;
+    }
+
+    public void setWorking(boolean isWorking)
+    {
+        this.isWorking = isWorking;
+    }
+
+    public boolean isWorking() {return isWorking;}
+
+    public void setSettings(LinkedHashMap<String, String> settings)
+    {
+        this.settings = settings;
+    }
+
+    public void setPrintArea(Object textArea)
+    {
+        printArea = textArea;
     }
 
     public void stop()
@@ -56,13 +85,23 @@ public class RequestResponder {
 
     public void startRequestResponder()
     {
-        connector.openPort(
-                Connector.TCP_CLIENT_STRING +
-                        Connector.TCP_SPLIT_STRING + "192.168.1.11" +
-                        Connector.TCP_SPLIT_STRING + "5000"
-        );
+        new StartingThread();
+    }
 
-        commandProcessor = new CommandProcessor();
+    private class StartingThread extends Thread {
+
+        public StartingThread()
+        {
+            start();
+        }
+
+        @Override
+        public void run() {
+            connector.openPort(port);
+            isReady = true;
+            if (!connector.isOpened()) TimeServices.wait(500);
+            commandProcessor = new CommandProcessor();
+        }
     }
 
     private class CommandProcessor extends Thread {
@@ -79,25 +118,25 @@ public class RequestResponder {
         }
 
         public void stopThread() {
-            this.isWorking = false;
+            isWorking = false;
             connector.closePort(connector.getPortName());
         }
 
         @Override
         public void run() {
+            printConsole("Command processor started!");
             boolean added = false;
             String command = "";
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+
             if (isWorking && connector.isOpened())
             {
-                String date = "[" + sdf.format(System.currentTimeMillis()) + "]: ";
-                settingsTable.print(date + "Connected!");
+                setWorking(true);
             }
             while (isWorking && connector.isOpened())
             {
                 if (receivedUueue != null)
                 {
-                    if (receivedUueue.hasNext()) TimeServices.wait(RECEIVING_TIMEOUT);
+                    if (receivedUueue.hasNext()) TimeServices.wait(receivingTimeout);
 
                     while(receivedUueue.hasNext())
                     {
@@ -108,20 +147,17 @@ public class RequestResponder {
                     {
                         String date = "[" + sdf.format(System.currentTimeMillis()) + "]: ";
                         System.out.println(date);
-                        System.out.println("Command: " + command.replaceAll("\r\n", ""));
+                        printConsole("Command: " + command.replaceAll("\r\n", ""));
                         added = false;
                         String respond = settings.get(command);
                         if (respond == null)
                         {
-                            if (settingsTable != null)
-                            {
-                                settingsTable.print(date + " Unknown request: " + command);
-                            }
-                            System.out.println("Unknown request: " + command);
+                            print("Unknown request: " + command);
+                            printConsole("Unknown request: " + command);
                         }
                         else
                         {
-                            System.out.println("Respond: " + respond);
+                            printConsole("Respond: " + respond);
                             connector.send(respond);
                         }
 
@@ -132,59 +168,45 @@ public class RequestResponder {
                 TimeServices.wait(10);
             }
 
-            System.out.println("CommandProcessor finished!");
-            if (settingsTable != null)
+            printConsole("CommandProcessor finished!");
+            //print("Disconnected!");
+            setWorking(false);
+            setReady(false);
+        }
+    }
+
+    public void printConsole(String str)
+    {
+        String date = "[" + sdf.format(System.currentTimeMillis()) + "]: ";
+        str = date + str;
+        System.out.println(str);
+    }
+
+    public void print(String str)
+    {
+        if (printArea !=  null)
+        {
+            if (printArea instanceof JTextArea)
             {
+                JTextArea txtLog = (JTextArea)printArea;
                 String date = "[" + sdf.format(System.currentTimeMillis()) + "]: ";
-                settingsTable.print(date + "Disconnected!");
+                str = date + str;
+                if (!txtLog.getText().endsWith("\n"))
+                {
+                    if (txtLog.getText().length() > 0) txtLog.append("\n" + str);
+                    else txtLog.append(str);
+                }
+                else
+                {
+                    txtLog.append(str);
+                }
             }
+
         }
     }
 
 
-    private LinkedHashMap<String, String> parseSettings()
-    {
-        LinkedHashMap<String, String> responds = new LinkedHashMap<String, String>(32);
-        try {
-            File inputFile = new File(this.path);
-            if (!inputFile.exists())
-            {
-                createSettingsFile();
-            }
-            SAXReader reader = new SAXReader();
-            Document document = reader.read( inputFile );
-            //Element classElement = document.getRootElement();
-            List<Node> nodes = document.selectNodes("/datas/data" );
-            System.out.println("----------------------------");
-            for (Node node : nodes) {
-                String request = node.valueOf("@request");
-                String respond = node.valueOf("@respond");
-                responds.put(request, respond);
-            }
-        } catch (Exception e) {
-            LOG.error("Devices parse error: ", e);
-        }
 
-        return responds;
-    }
-
-    private void createSettingsFile()
-    {
-        try
-        {
-            File file = new File(this.path);
-            FileWriter fileWriter = new FileWriter(this.path);
-            file.createNewFile();
-            fileWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n");
-            fileWriter.close();
-
-        }
-        catch (Exception e)
-        {
-            LOG.error("Creating settings file error: ", e);
-        }
-
-    }
 
 
 

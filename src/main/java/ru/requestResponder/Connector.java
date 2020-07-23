@@ -84,6 +84,10 @@ public class Connector {
                     host = host.replaceAll(" ", "");
                     String portString = splitted[2].replaceAll(" ", "");
                     port = Integer.parseInt(portString);
+                    if (splitted.length > 3)
+                    {
+                        connectTimeout = Integer.parseInt(splitted[3]);
+                    }
                     tcpipClient = new TCPIPClient(host, port, connectTimeout, true);
                     int tmpTimeout = connectTimeout;
                     while(!tcpipClient.isWorking() && (tmpTimeout > 0))
@@ -147,14 +151,19 @@ public class Connector {
     {
         if (portName.toLowerCase().contains(TCP_CLIENT_STRING))
         {
-            tcpipClient.closeTCPClientConnect();
+            if (tcpipClient != null)
+            {
+                tcpipClient.closeTCPClientConnect();
+            }
+            if (pr != null) pr.stopThread();
+            pr = null;
             tcpipClient = null;
             isOpened = false;
         }
-        else if ((portName.toLowerCase().contains("/dev/tty")) || (portName.toLowerCase().contains("COM")))
+        else if ((portName.toLowerCase().contains("/dev/tty")) || (portName.toLowerCase().contains("com")))
         {
-            sp.closePort(portName);
-            pr.stopThread();
+            if (sp != null) sp.closePort(portName);
+            if (pr != null) pr.stopThread();
             pr = null;
             isOpened = false;
             this.portName = "";
@@ -166,7 +175,7 @@ public class Connector {
         //System.err.println("Sending time: " + date.getTime());
         if (isOpened)
         {
-            if ((portName.toLowerCase().contains("/dev/tty")) || (portName.toLowerCase().contains("COM")))
+            if ((portName.toLowerCase().contains("/dev/tty")) || (portName.toLowerCase().contains("com")))
             {
                 sp.send(request);
             }
