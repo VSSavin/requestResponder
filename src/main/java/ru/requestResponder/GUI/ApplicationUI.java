@@ -1,10 +1,7 @@
 package ru.requestResponder.GUI;
 
 import org.apache.log4j.Logger;
-import org.dom4j.Document;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
-import org.dom4j.Node;
+import org.dom4j.*;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
@@ -13,13 +10,10 @@ import ru.requestResponder.Connector;
 import ru.requestResponder.RequestResponder;
 
 import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -37,97 +31,44 @@ public class ApplicationUI extends JPanel {
     private RequestResponder requestResponder;
     private JTextArea txtLog = new JTextArea();
     private ResponderChecker responderChecker;
+    DefaultTableModel tableModel;
     //JToggleButton btnStartStop = new JToggleButton("Start");
     //JButton btnClearLog = new JButton("Clear");
     JToggleButton btnStartStop;
     JButton btnClearLog;
+    JButton btnAdd;
 
-    Object[][] data;
-    String[] columnNames = {"Request", "Respond"};
     JTable table;
 
     String port = "";
 
-    public ApplicationUI(final RequestResponder requestResponder)
+    public ApplicationUI()
     {
-        //super(new GridLayout(3,0));
-
-        this.settings = parseSettings();
-
+        requestResponder = new RequestResponder();
+        loadSettings();
         JFrame frame = new JFrame("Request Responder");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setOpaque(true);
-        this.requestResponder = requestResponder;
-        this.requestResponder.setPrintArea(txtLog);
-        this.requestResponder.setSettings(settings);
 
-        port = this.settings.get("port");
-        String[] portSettings = port.split(Connector.TCP_SPLIT_STRING);
+
         initUI();
 
-        /*
-        settings.put("port",
-                Connector.TCP_CLIENT_STRING +
-                        Connector.TCP_SPLIT_STRING + "192.168.1.11" +
-                        Connector.TCP_SPLIT_STRING + "5000"
-        );
-        */
-
-
-
-        try
-        {
-            if (portSettings.length > 4) requestResponder.setReceivingTimeout(Integer.parseInt(portSettings[4]));
-        }
-        catch (Exception e)
-        {
-            LOG.error("Port settings error: ", e);
-        }
-
-        this.requestResponder.setPort(port);
-
-
-
-
-
-        //add(btnStartStop);
-
-
+        this.requestResponder.setPrintArea(txtLog);
 
 
         frame.setContentPane(this);
         frame.setMinimumSize(new Dimension(1000, 300));
 
-        //Display the window.
         frame.pack();
         frame.setVisible(true);
 
-
-
-        //requestResponder.startRequestResponder();
     }
 
 
     private void initUI()
     {
-        data = new Object[settings.size()][2];
-        //this.settings.remove("port");
-        data[0][0] = "Connection port:";
-        data[0][1] = port;
-        int i = 1;
-        for(Map.Entry entry: settings.entrySet()) {
-            String key = (String) entry.getKey();
-            String value = (String) entry.getValue();
-            if (!key.equals("port"))
-            {
-                data[i][0] = key;
-                data[i][1] = value;
-                i++;
-            }
-
-        }
-
-        table = new JTable(data, columnNames)
+        //table = new JTable(data, columnNames)
+        table = new JTable(tableModel)
         {
             public boolean editCellAt(int row, int column, java.util.EventObject e) {
                 return false;
@@ -135,6 +76,7 @@ public class ApplicationUI extends JPanel {
         };
         table.setPreferredScrollableViewportSize(new Dimension(500, 70));
         table.setFillsViewportHeight(true);
+        table.getTableHeader().setReorderingAllowed(false);
 
         //Create the scroll pane and add the table to it.
         JScrollPane scrollPaneTable = new JScrollPane(table);
@@ -145,6 +87,9 @@ public class ApplicationUI extends JPanel {
         //JScrollPane scrollPaneLog = new JScrollPane(txtLog);
         //add(scrollPaneLog);
 
+
+
+        /*
         setLayout(new GridBagLayout());
         btnClearLog = new JButton();
         btnClearLog.setText("Clear");
@@ -163,7 +108,6 @@ public class ApplicationUI extends JPanel {
         gbc.anchor = GridBagConstraints.NORTHWEST;
         gbc.insets = new Insets(2, 2, 2, 2);
         add(btnStartStop, gbc);
-        //table = new JTable();
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 1;
@@ -172,7 +116,6 @@ public class ApplicationUI extends JPanel {
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(2, 2, 2, 2);
-        //add(table, gbc);
         add(scrollPaneTable, gbc);
         JScrollPane scrollPaneLog = new JScrollPane();
         gbc = new GridBagConstraints();
@@ -184,10 +127,65 @@ public class ApplicationUI extends JPanel {
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(2, 2, 2, 2);
         add(scrollPaneLog, gbc);
-        //txtLog = new JTextArea();
         scrollPaneLog.setViewportView(txtLog);
+        btnAdd = new JButton();
+        btnAdd.setText("Add");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        add(btnAdd, gbc);
+*/
 
 
+
+        setLayout(new GridBagLayout());
+        btnClearLog = new JButton();
+        btnClearLog.setText("Clear Log");
+        GridBagConstraints gbc;
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.insets = new Insets(2, 2, 2, 2);
+        add(btnClearLog, gbc);
+        btnStartStop = new JToggleButton();
+        btnStartStop.setText("Start");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.insets = new Insets(2, 2, 2, 2);
+        add(btnStartStop, gbc);
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 3;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(2, 2, 2, 2);
+        add(scrollPaneTable, gbc);
+        JScrollPane scrollPaneLog = new JScrollPane();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 3;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(2, 2, 2, 2);
+        add(scrollPaneLog, gbc);
+        txtLog = new JTextArea();
+        scrollPaneLog.setViewportView(txtLog);
+        btnAdd = new JButton();
+        btnAdd.setText("Add");
+        gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(2, 2, 2, 2);
+        add(btnAdd, gbc);
 
         btnStartStop.addActionListener(new ActionListener() {
             @Override
@@ -214,77 +212,144 @@ public class ApplicationUI extends JPanel {
             }
         });
 
-
-        table.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2)
+        btnAdd.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String value = settings.get("Request");
+                if (value == null)
                 {
-                    int row = table.getSelectedRow();
-                    int column = table.getSelectedColumn();
-                    Object dat = data[row][column];
-                    String value = "";
-                    if (dat instanceof String)
-                    {
-                        value = (String)dat;
-                    }
-
-                    String result = JOptionPane.showInputDialog("Enter data: ", value);
-                    if (result != null)
-                    {
-                        if (data[row][column] instanceof String)
-                        {
-                            TableModel tableModel = table.getModel();
-                            value = (String)tableModel.getValueAt(row, column);
-                            String key = (String)tableModel.getValueAt(row, 0);
-                            tableModel.setValueAt(result, row, column);
-
-                            List<Map.Entry<String, String>> indexedList = new ArrayList<Map.Entry<String, String>>(settings.entrySet());
-                            //Map.Entry<String, String> entry = indexedList.get(0);
-
-                            if (column == 0)
-                            {
-                                LinkedHashMap<String, String> tmp = settings;
-                                settings = new LinkedHashMap<String, String>(32);
-                                for (Map.Entry<String, String> entry: indexedList)
-                                {
-                                    if (entry.getKey().equals(key))
-                                    {
-                                        value = entry.getValue();
-                                        settings.put(result, value);
-                                    }
-                                    else
-                                    {
-                                        settings.put(entry.getKey(), entry.getValue());
-                                    }
-
-                                }
-
-                            }
-                            else
-                            {
-                               // value = settings.get(key);
-                                /*
-                                for (Map.Entry<String, String> entry: indexedList)
-                                {
-                                    if (entry.getKey().equals(key))
-                                    {
-                                        entry.setValue(result);
-                                    }
-                                }
-                                */
-                                settings.put(key, result);
-                            }
-
-                            saveSettings();
-                        }
-
-                    }
+                    DefaultTableModel defaultTableModel = (DefaultTableModel)table.getModel();
+                    defaultTableModel.addRow(new Object[] {"Request","Respond"});
+                    settings.put("Request", "Respond");
+                    saveSettings();
                 }
+
             }
         });
 
 
+        table.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e))
+                {
+                    if (e.getClickCount() == 2)
+                    {
+                        int row = table.getSelectedRow();
+                        int column = table.getSelectedColumn();
+                        if (!((row == 0) && (column == 0)))
+                        {
+                            Object dat = table.getModel().getValueAt(row, column);
+                            String value = "";
+                            if (dat instanceof String)
+                            {
+                                value = (String)dat;
+                            }
 
+                            String result = JOptionPane.showInputDialog("Enter data: ", value);
+
+                            if (result != null)
+                            {
+                                if ((row == 0) && (column == 1))    //changing port settings
+                                {
+                                    port = result;
+                                }
+                            }
+
+
+                            else
+                            {
+
+                                if (result != null)
+                                {
+                                    TableModel tableModel = table.getModel();
+                                    String oldKey = (String)tableModel.getValueAt(row, 0);
+                                    oldKey = oldKey.replaceAll("\\\\r", "\r");
+                                    oldKey = oldKey.replaceAll("\\\\n", "\n");
+                                    result = result.replaceAll("\\\\r", "\r");
+                                    result = result.replaceAll("\\\\n", "\n");
+                                    tableModel.setValueAt(result, row, column);
+
+                                    List<Map.Entry<String, String>> indexedList = new ArrayList<Map.Entry<String, String>>(settings.entrySet());
+
+                                    if (column == 0)        //if changed key...
+                                    {
+                                        settings = new LinkedHashMap<String, String>(32);
+                                        for (Map.Entry<String, String> entry: indexedList)
+                                        {
+                                            if (entry.getKey().equals(oldKey))
+                                            {
+                                                value = entry.getValue();
+                                                settings.put(result, value);
+                                            }
+                                            else
+                                            {
+                                                settings.put(entry.getKey(), entry.getValue());
+                                            }
+
+                                        }
+                                    }
+                                    else
+                                    {
+                                        //settings.put(key, result);
+                                        settings.put(oldKey, result);
+                                    }
+
+
+
+                                }
+                            }
+
+                            saveSettings();
+                            loadSettings();
+
+
+                        }
+
+                    }
+                }
+
+            }
+        });
+
+        table.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_DELETE)
+                {
+                    int result = JOptionPane.showConfirmDialog(null, "Are you sure?", "Deleting", JOptionPane.YES_NO_OPTION);
+
+                    System.out.println(result);
+
+                    if (result == JOptionPane.YES_OPTION)
+                    {
+                        int row = table.getSelectedRow();
+                        Object key = table.getModel().getValueAt(row, 0);
+                        if (key instanceof String)
+                        {
+                            if (row > 0)
+                            {
+                                settings.remove(key);
+                                saveSettings();
+                                loadSettings();
+                            }
+                        }
+                    }
+
+
+
+                }
+            }
+        });
 
     }
 
@@ -311,7 +376,11 @@ public class ApplicationUI extends JPanel {
 
             if (ready)
             {
-                if (requestResponder.isWorking())
+                synchronized (requestResponder)
+                {
+                    isWorking = requestResponder.isWorking();
+                }
+                if (isWorking)
                 {
                     requestResponder.print("Connected...");
                     connectionFailed = false;
@@ -326,10 +395,19 @@ public class ApplicationUI extends JPanel {
 
             while(isWorking)
             {
+                /*
+                synchronized (requestResponder)
+                {
+                    isWorking = requestResponder.isWorking();
+                }
+                */
+
+
                 if (!requestResponder.isWorking())
                 {
                     isWorking = false;
                 }
+
                 TimeServices.wait(10);
             }
 
@@ -368,7 +446,11 @@ public class ApplicationUI extends JPanel {
             nodes = document.selectNodes("/settings/datas/data" );
             for (Node node : nodes) {
                 String request = node.valueOf("@request");
+                request = request.replaceAll("<caret>", "\r");
+                request = request.replaceAll("<newline>", "\n");
                 String respond = node.valueOf("@respond");
+                respond = respond.replaceAll("<caret>", "\r");
+                respond = respond.replaceAll("<newline>", "\n");
                 responds.put(request, respond);
             }
         } catch (Exception e) {
@@ -413,11 +495,15 @@ public class ApplicationUI extends JPanel {
             for (Map.Entry entry : settings.entrySet()) {
                 String key = (String) entry.getKey();
                 String value = (String) entry.getValue();
+                key = key.replaceAll("\r", "<caret>");
+                key = key.replaceAll("\n", "<newline>");
+                value = value.replaceAll("\r", "<caret>");
+                value = value.replaceAll("\n", "<newline>");
                 if (!key.equals("port"))
                 {
                     Element data = root.addElement("data");
-                    data.addAttribute("request", key);
-                    data.addAttribute("respond", value);
+                    Element req = data.addAttribute("request", key);
+                    Element resp = data.addAttribute("respond", value);
                 }
 
             }
@@ -435,6 +521,74 @@ public class ApplicationUI extends JPanel {
             LOG.error("Save settings error: ", e);
         }
 
+    }
+
+    private void loadSettings()
+    {
+        this.settings = parseSettings();
+        port = this.settings.get("port");
+        String[] portSettings = port.split(Connector.CONNECTOR_SPLIT_STRING);
+        this.requestResponder.setPort(port);
+
+        try
+        {
+            if (port.contains(Connector.SERIAL_PORT_STRING))
+            {
+                if (portSettings.length > 7) requestResponder.setReceivingTimeout(Integer.parseInt(portSettings[7]));
+            }
+            else if (port.contains(Connector.TCP_CLIENT_STRING))
+            {
+                if (portSettings.length > 4) requestResponder.setReceivingTimeout(Integer.parseInt(portSettings[4]));
+            }
+
+        }
+        catch (Exception e)
+        {
+            LOG.error("Port settings error: ", e);
+        }
+
+        /*
+        data = new Object[settings.size()][2];
+        //this.settings.remove("port");
+        data[0][0] = "Connection port:";
+        data[0][1] = port;
+        int i = 1;
+        for(Map.Entry entry: settings.entrySet()) {
+            String key = (String) entry.getKey();
+            String value = (String) entry.getValue();
+            if (!key.equals("port"))
+            {
+                data[i][0] = key;
+                data[i][1] = value;
+                i++;
+            }
+
+        }
+        */
+
+        tableModel = new DefaultTableModel();
+        tableModel.addColumn("Request");
+        tableModel.addColumn("Respond");
+        tableModel.addRow(new Object[] { "Connection port: ", port });
+
+        for(Map.Entry entry: settings.entrySet()) {
+            String key = (String) entry.getKey();
+            String value = (String) entry.getValue();
+            if (!key.equals("port"))
+            {
+                key = key.replaceAll("\r", "\\\\r");
+                key = key.replaceAll("\n", "\\\\n");
+                value = value.replaceAll("\r", "\\\\r");
+                value = value.replaceAll("\n", "\\\\n");
+                tableModel.addRow(new Object[] {key, value});
+            }
+
+        }
+
+        if (table != null) table.setModel(tableModel);
+
+
+        this.requestResponder.setSettings(settings);
     }
 
 }

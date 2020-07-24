@@ -19,13 +19,16 @@ public class Connector {
     public static final int PORT_TYPE_TCP_CLIENT = 1;
 
     public static String TCP_CLIENT_STRING = "tcpip client mode";
-    public static final String TCP_SPLIT_STRING = ":";
+    public static String SERIAL_PORT_STRING = "serial port mode";
+    public static final String CONNECTOR_SPLIT_STRING = ":";
 
     private Queue receivedQueue = new Queue(32768);
 
     private int portType = PORT_TYPE_SERIAL;
 
     Date date = new Date();
+
+    private Driver driver;
 
     private int connectTimeout = 2000;
     private boolean isOpened = false;
@@ -75,7 +78,7 @@ public class Connector {
         {
             if (portName.toLowerCase().contains(TCP_CLIENT_STRING))
             {
-                String[] splitted = portName.toLowerCase().split(TCP_SPLIT_STRING);
+                String[] splitted = portName.toLowerCase().split(CONNECTOR_SPLIT_STRING);
                 String host = "127.0.0.1";
                 int port = 5000;
                 if (splitted.length > 2)
@@ -107,6 +110,24 @@ public class Connector {
 
                 }
 
+            }
+
+            else if (portName.toLowerCase().contains(SERIAL_PORT_STRING))
+            {
+                String[] splitted = portName.split(CONNECTOR_SPLIT_STRING);
+                if (splitted.length > 2)
+                {
+                    String pn = splitted[1].replaceAll(" ", "");
+                    int baudRate = Integer.parseInt(splitted[2].replaceAll(" ", ""));
+                    int dataBits = Integer.parseInt(splitted[3].replaceAll(" ", ""));
+                    int stopBits = Integer.parseInt(splitted[4].replaceAll(" ", ""));
+                    int parity = Integer.parseInt(splitted[5].replaceAll(" ", ""));
+                    connectTimeout = Integer.parseInt(splitted[6].replaceAll(" ", ""));
+
+                    if (driver == null) driver = new Driver(true);
+                    isOpened = openPort(pn, baudRate, dataBits, stopBits, parity);
+
+                }
             }
         }
 
@@ -160,7 +181,8 @@ public class Connector {
             tcpipClient = null;
             isOpened = false;
         }
-        else if ((portName.toLowerCase().contains("/dev/tty")) || (portName.toLowerCase().contains("com")))
+        //else if ((portName.toLowerCase().contains("/dev/tty")) || (portName.toLowerCase().contains("com")))
+        else if (portName.toLowerCase().contains(SERIAL_PORT_STRING))
         {
             if (sp != null) sp.closePort(portName);
             if (pr != null) pr.stopThread();
@@ -175,7 +197,8 @@ public class Connector {
         //System.err.println("Sending time: " + date.getTime());
         if (isOpened)
         {
-            if ((portName.toLowerCase().contains("/dev/tty")) || (portName.toLowerCase().contains("com")))
+            //if ((portName.toLowerCase().contains("/dev/tty")) || (portName.toLowerCase().contains("com")))
+            if (portName.toLowerCase().contains(SERIAL_PORT_STRING))
             {
                 sp.send(request);
             }

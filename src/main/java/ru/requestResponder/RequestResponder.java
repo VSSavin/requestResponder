@@ -35,8 +35,8 @@ public class RequestResponder {
         settings = parseSettings();
         settings.put("port",
                 Connector.TCP_CLIENT_STRING +
-                        Connector.TCP_SPLIT_STRING + "192.168.1.11" +
-                        Connector.TCP_SPLIT_STRING + "5000"
+                        Connector.CONNECTOR_SPLIT_STRING + "192.168.1.11" +
+                        Connector.CONNECTOR_SPLIT_STRING + "5000"
         );
         settingsTable = new ApplicationUI(settings, this);
         */
@@ -98,7 +98,7 @@ public class RequestResponder {
         @Override
         public void run() {
             connector.openPort(port);
-            isReady = true;
+            setReady(true);
             if (!connector.isOpened()) TimeServices.wait(500);
             commandProcessor = new CommandProcessor();
         }

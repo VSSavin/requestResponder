@@ -41,8 +41,7 @@ public class Launcher {
 
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    requestResponder = new RequestResponder();
-                    ApplicationUI applicationUI = new ApplicationUI(requestResponder);
+                    ApplicationUI applicationUI = new ApplicationUI();
                 }
             });
 

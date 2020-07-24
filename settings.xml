@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<datas>
-    <data request=":0104000A000AE7&#xD;&#xA;" respond=":01041400AB00FF000000000000000000000000000000003D&#xD;&#xA;"></data>
-    <data request=":0204000A000AE6&#xD;&#xA;" respond=":02041400AB00FF000000000000000000000000000000003C&#xD;&#xA;"></data>
-    <data request=":0A04000A000ADE&#xD;&#xA;" respond=":0A041400AB00FF0000000000000000000000000000000034&#xD;&#xA;"></data>
-    <data request=":0B04000A000ADD&#xD;&#xA;" respond=":0B041400AB00FF0000000000000000000000000000000033&#xD;&#xA;"></data>
-    <data request=":0C04000A000ADC&#xD;&#xA;" respond=":0C041400AB00FF0000000000000000000000000000000032&#xD;&#xA;"></data>
-</datas>
+
+<settings>
+  <connection port="tcpip client mode:192.168.1.11:5000:100"/>
+  <datas>
+    <data request=":0104000A000AE7&lt;caret&gt;&lt;newline&gt;" respond=":01041400AB00FF000000000000000000000000000000003D&lt;caret&gt;&lt;newline&gt;"/>
+    <data request=":0204000A000AE6&lt;caret&gt;&lt;newline&gt;" respond=":02041400AB00FF000000000000000000000000000000003C&lt;caret&gt;&lt;newline&gt;"/>
+    <data request=":0A04000A000ADE&lt;caret&gt;&lt;newline&gt;" respond=":0A041400AB00FF0000000000000000000000000000000034&lt;caret&gt;&lt;newline&gt;"/>
+    <data request=":0B04000A000ADD&lt;caret&gt;&lt;newline&gt;" respond=":0B041400AB00FF0000000000000000000000000000000033&lt;caret&gt;&lt;newline&gt;"/>
+    <data request=":0C04000A000ADC&lt;caret&gt;&lt;newline&gt;" respond=":0C041400AB00FF0000000000000000000000000000000032&lt;caret&gt;&lt;newline&gt;"/>
+  </datas>
+</settings>
