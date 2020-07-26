@@ -2,7 +2,7 @@ package ru.requestResponder;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
-import ru.requestResponder.GUI.ApplicationUI;
+import ru.requestResponder.ui.ApplicationUI;
 
 import javax.swing.*;
 
@@ -11,7 +11,6 @@ import javax.swing.*;
  */
 public class Launcher {
     private static final Logger LOG = Logger.getLogger(Launcher.class);
-    private static RequestResponder requestResponder;
     public static void main(String[] args) {
 
         try {
@@ -41,11 +40,9 @@ public class Launcher {
 
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    ApplicationUI applicationUI = new ApplicationUI();
+                    new ApplicationUI();
                 }
             });
-
-            //requestResponder.startRequestResponder();
 
         }
 

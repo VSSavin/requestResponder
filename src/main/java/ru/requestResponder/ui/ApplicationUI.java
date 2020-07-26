@@ -1,4 +1,4 @@
-package ru.requestResponder.GUI;
+package ru.requestResponder.ui;
 
 import org.apache.log4j.Logger;
 import org.dom4j.*;
@@ -8,6 +8,8 @@ import org.dom4j.io.XMLWriter;
 import ru.library.utils.TimeServices;
 import ru.requestResponder.Connector;
 import ru.requestResponder.RequestResponder;
+import ru.requestResponder.ui.locale.ApplicationUILocale;
+import ru.requestResponder.utils.InterfaceLocalizer;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -44,9 +46,10 @@ public class ApplicationUI extends JPanel {
 
     public ApplicationUI()
     {
+        new InterfaceLocalizer().loadLanguageResources();
         requestResponder = new RequestResponder();
         loadSettings();
-        JFrame frame = new JFrame("Request Responder");
+        JFrame frame = new JFrame(ApplicationUILocale.title);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setOpaque(true);
 
@@ -141,7 +144,7 @@ public class ApplicationUI extends JPanel {
 
         setLayout(new GridBagLayout());
         btnClearLog = new JButton();
-        btnClearLog.setText("Clear Log");
+        btnClearLog.setText(ApplicationUILocale.btnClear);
         GridBagConstraints gbc;
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -150,7 +153,7 @@ public class ApplicationUI extends JPanel {
         gbc.insets = new Insets(2, 2, 2, 2);
         add(btnClearLog, gbc);
         btnStartStop = new JToggleButton();
-        btnStartStop.setText("Start");
+        btnStartStop.setText(ApplicationUILocale.btnStartStopped);
         gbc = new GridBagConstraints();
         gbc.gridx = 2;
         gbc.gridy = 0;
@@ -177,9 +180,10 @@ public class ApplicationUI extends JPanel {
         gbc.insets = new Insets(2, 2, 2, 2);
         add(scrollPaneLog, gbc);
         txtLog = new JTextArea();
+        txtLog.setEditable(false);
         scrollPaneLog.setViewportView(txtLog);
         btnAdd = new JButton();
-        btnAdd.setText("Add");
+        btnAdd.setText(ApplicationUILocale.btnAdd);
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 1;
@@ -193,9 +197,9 @@ public class ApplicationUI extends JPanel {
 
                 if(btnStartStop.getModel().isSelected())
                 {
-                    requestResponder.print("Connecting...");
+                    requestResponder.print(ApplicationUILocale.connecting);
                     requestResponder.startRequestResponder();
-                    btnStartStop.setText("Stop");
+                    btnStartStop.setText(ApplicationUILocale.btnStartStarted);
                     responderChecker = new ResponderChecker();
                 }
                 else
@@ -215,12 +219,12 @@ public class ApplicationUI extends JPanel {
         btnAdd.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String value = settings.get("Request");
+                String value = settings.get(ApplicationUILocale.requestColumn);
                 if (value == null)
                 {
                     DefaultTableModel defaultTableModel = (DefaultTableModel)table.getModel();
-                    defaultTableModel.addRow(new Object[] {"Request","Respond"});
-                    settings.put("Request", "Respond");
+                    defaultTableModel.addRow(new Object[] {ApplicationUILocale.requestColumn,ApplicationUILocale.respondColumn});
+                    settings.put(ApplicationUILocale.requestColumn, ApplicationUILocale.respondColumn);
                     saveSettings();
                 }
 
@@ -245,7 +249,23 @@ public class ApplicationUI extends JPanel {
                                 value = (String)dat;
                             }
 
-                            String result = JOptionPane.showInputDialog("Enter data: ", value);
+                            String result = JOptionPane.showInputDialog(null,
+                                    ApplicationUILocale.enterData,
+                                    value);
+
+                            /*
+                            if (result==JOptionPane.OK_OPTION)
+                            {
+                                if ((row == 0) && (column == 1))    //changing port settings
+                                {
+                                    //port = result;
+                                    port = tf.getText();
+                                }
+                            }
+
+                            */
+
+
 
                             if (result != null)
                             {
@@ -254,6 +274,8 @@ public class ApplicationUI extends JPanel {
                                     port = result;
                                 }
                             }
+
+
 
 
                             else
@@ -326,7 +348,10 @@ public class ApplicationUI extends JPanel {
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_DELETE)
                 {
-                    int result = JOptionPane.showConfirmDialog(null, "Are you sure?", "Deleting", JOptionPane.YES_NO_OPTION);
+                    int result = JOptionPane.showConfirmDialog(null,
+                            ApplicationUILocale.deleteConfirm,
+                            ApplicationUILocale.deleteConfirmationTitle,
+                            JOptionPane.YES_NO_OPTION);
 
                     System.out.println(result);
 
@@ -382,12 +407,12 @@ public class ApplicationUI extends JPanel {
                 }
                 if (isWorking)
                 {
-                    requestResponder.print("Connected...");
+                    requestResponder.print(ApplicationUILocale.connected);
                     connectionFailed = false;
                 }
                 else
                 {
-                    requestResponder.print("Connection failed!");
+                    requestResponder.print(ApplicationUILocale.connectFailed);
                     connectionFailed = true;
                 }
 
@@ -411,7 +436,7 @@ public class ApplicationUI extends JPanel {
                 TimeServices.wait(10);
             }
 
-            if (!connectionFailed) requestResponder.print("Disconnected!");
+            if (!connectionFailed) requestResponder.print(ApplicationUILocale.disconnected);
 
             stopAll();
 
@@ -421,7 +446,7 @@ public class ApplicationUI extends JPanel {
     private void stopAll()
     {
         requestResponder.stop();
-        btnStartStop.setText("Start");
+        btnStartStop.setText(ApplicationUILocale.btnStartStopped);
         btnStartStop.getModel().setSelected(false);
     }
 
@@ -567,8 +592,8 @@ public class ApplicationUI extends JPanel {
         */
 
         tableModel = new DefaultTableModel();
-        tableModel.addColumn("Request");
-        tableModel.addColumn("Respond");
+        tableModel.addColumn(ApplicationUILocale.requestColumn);
+        tableModel.addColumn(ApplicationUILocale.respondColumn);
         tableModel.addRow(new Object[] { "Connection port: ", port });
 
         for(Map.Entry entry: settings.entrySet()) {
