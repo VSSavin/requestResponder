@@ -351,9 +351,13 @@ public class ApplicationUI extends JPanel {
                         Object key = table.getModel().getValueAt(row, 0);
                         if (key instanceof String)
                         {
+                            String keyString = (String)key;//.replaceAll("\\\\r", "\r");
+                            keyString = keyString.replaceAll("\\\\r", "\r");
+                            keyString = keyString.replaceAll("\\\\n", "\n");
                             if (row > 0)
                             {
-                                settings.remove(key);
+                                //settings.remove(key);
+                                settings.remove(keyString);
                                 saveSettings();
                                 loadSettings();
                             }
