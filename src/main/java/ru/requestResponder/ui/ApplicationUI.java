@@ -273,16 +273,10 @@ public class ApplicationUI extends JPanel {
                                 {
                                     port = result;
                                 }
-                            }
 
-
-
-
-                            else
-                            {
-
-                                if (result != null)
+                                else
                                 {
+
                                     TableModel tableModel = table.getModel();
                                     String oldKey = (String)tableModel.getValueAt(row, 0);
                                     oldKey = oldKey.replaceAll("\\\\r", "\r");
@@ -315,15 +309,11 @@ public class ApplicationUI extends JPanel {
                                         //settings.put(key, result);
                                         settings.put(oldKey, result);
                                     }
-
-
-
                                 }
                             }
 
                             saveSettings();
                             loadSettings();
-
 
                         }
 
